@@ -1,49 +1,86 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class NodeConnection : MonoBehaviour
 {
     public GameObject nodeOriginObject;
-    public LineRenderer lineRenderer;
+    public RigidBodyOrigin nodeOrigin;
     public Material lineMaterial;
-    
-    private NodeOrigin nodeOrigin;
+    public List<GameObject> connections = new List<GameObject>();
 
     private void Start()
     {
-        CreateConnections();
-        nodeOrigin = nodeOriginObject.GetComponent<NodeOrigin>();
+        nodeOrigin = nodeOriginObject.GetComponent<RigidBodyOrigin>();
     }
 
-    private void CreateConnections()
+    private void Update()
+    {
+        UpdateLines();
+    }
+
+    private void CreateRandomConnections()
     {
         int totalNodes = nodeOrigin.nodesList.Count;
 
         for (int i = 0; i < totalNodes; i++)
         {
+            Node nodeA = nodeOrigin.nodesList[i].GetComponent<Node>();
+
             for (int j = i + 1; j < totalNodes; j++)
             {
-                GameObject nodeA = nodeOrigin.nodesList[i];
-                GameObject nodeB = nodeOrigin.nodesList[j];
+                Node nodeB = nodeOrigin.nodesList[j].GetComponent<Node>();
 
-                // Check if nodes are within the connection distance
-                float distance = Vector3.Distance(nodeA.transform.position, nodeB.transform.position);
-                if (distance <= nodeOrigin.distanceFromOrigin)
+                // Randomly connect nodes based on a probability (adjust as desired)
+                float connectProbability = 0.5f;
+                if (Random.value <= connectProbability)
                 {
-                    // Create a line renderer component for the connection
-                    GameObject connection = new GameObject("Connection");
-                    connection.transform.SetParent(transform);
-
-                    LineRenderer line = connection.AddComponent<LineRenderer>();
-                    line.material = lineMaterial;
-
-                    // Set the start and end positions of the line
-                    line.SetPositions(new Vector3[] { nodeA.transform.position, nodeB.transform.position });
-
-                    // Customize line appearance as desired (e.g., color, width, etc.)
-                    line.startWidth = 0.1f;
-                    line.endWidth = 0.1f;
+                    nodeA.AddNeighbor(nodeB);
                 }
             }
+        }
+    }
+    
+
+    // private void UpdateLines()
+    // {
+    //     List<Node> nodesAlreadyConnected = new List<Node>();
+    //     for (int i = 0; i < nodeOrigin.nodesList.Count; i++)
+    //     {
+    //         Node node = nodeOrigin.nodesList[i].GetComponent<Node>();
+    //
+    //         foreach (Node neighbor in node.GetNeighbors())
+    //         {
+    //             if (nodesAlreadyConnected.Contains(neighbor))
+    //                 continue;
+    //             for (int c = 0; c < neighbor.transform.childCount; c++)
+    //             {
+    //                 neighbor.transform.GetChild(c).GetComponent<LineRenderer>().
+    //                     SetPositions(new Vector3[] { node.transform.position, neighbor.transform.position });
+    //             }
+    //         }
+    //         nodesAlreadyConnected.Add(node);
+    //     }
+    // }
+    private void UpdateLines()
+    {
+        List<Node> nodesAlreadyConnected = new List<Node>();
+        for (int i = 0; i < nodeOrigin.nodesList.Count; i++)
+        {
+            Node node = nodeOrigin.nodesList[i].GetComponent<Node>();
+
+            foreach (Node neighbor in node.GetNeighbors())
+            {
+                if (nodesAlreadyConnected.Contains(neighbor))
+                    continue;
+                for (int c = 0; c < neighbor.transform.childCount; c++)
+                {
+                    neighbor.transform.GetChild(c).GetComponent<LineRenderer>().
+                        SetPositions(new Vector3[] { node.transform.position, neighbor.transform.position });
+                }
+            }
+            nodesAlreadyConnected.Add(node);
         }
     }
 }
